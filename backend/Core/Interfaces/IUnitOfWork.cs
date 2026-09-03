@@ -9,6 +9,11 @@ namespace KeyaExportImport.Api.Core.Interfaces
         IProductRepository Products { get; }
         IImportPoRepository ImportPOs { get; }
         IExportOrderRepository ExportOrders { get; }
+        IB2bProductRepository B2bProducts { get; }
+        IBuyLeadRepository BuyLeads { get; }
+        ITradeInquiryRepository TradeInquiries { get; }
+        ISupplierBidRepository SupplierBids { get; }
+        IGenericRepository<SellerProfile> SellerProfiles { get; }
         IGenericRepository<Supplier> Suppliers { get; }
         IGenericRepository<Customer> Customers { get; }
         IGenericRepository<Shipment> Shipments { get; }

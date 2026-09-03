@@ -18,10 +18,11 @@ namespace KeyaExportImport.Api.Core.Entities
 
         [Required]
         [MaxLength(100)]
-        public string Role { get; set; } = "Admin";
+        public string Password { get; set; } = "123456";
 
-        [MaxLength(500)]
-        public string Avatar { get; set; } = string.Empty;
+        [Required]
+        [MaxLength(100)]
+        public string Role { get; set; } = "Operator"; // Admin, Investigating Officer, Operator
 
         [MaxLength(150)]
         public string Department { get; set; } = string.Empty;

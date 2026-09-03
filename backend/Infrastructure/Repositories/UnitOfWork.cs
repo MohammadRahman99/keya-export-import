@@ -13,6 +13,11 @@ namespace KeyaExportImport.Api.Infrastructure.Repositories
         public IProductRepository Products { get; }
         public IImportPoRepository ImportPOs { get; }
         public IExportOrderRepository ExportOrders { get; }
+        public IB2bProductRepository B2bProducts { get; }
+        public IBuyLeadRepository BuyLeads { get; }
+        public ITradeInquiryRepository TradeInquiries { get; }
+        public ISupplierBidRepository SupplierBids { get; }
+        public IGenericRepository<SellerProfile> SellerProfiles { get; }
         public IGenericRepository<Supplier> Suppliers { get; }
         public IGenericRepository<Customer> Customers { get; }
         public IGenericRepository<Shipment> Shipments { get; }
@@ -27,6 +32,11 @@ namespace KeyaExportImport.Api.Infrastructure.Repositories
             Products = new ProductRepository(_context);
             ImportPOs = new ImportPoRepository(_context);
             ExportOrders = new ExportOrderRepository(_context);
+            B2bProducts = new B2bProductRepository(_context);
+            BuyLeads = new BuyLeadRepository(_context);
+            TradeInquiries = new TradeInquiryRepository(_context);
+            SupplierBids = new SupplierBidRepository(_context);
+            SellerProfiles = new GenericRepository<SellerProfile>(_context);
             Suppliers = new GenericRepository<Supplier>(_context);
             Customers = new GenericRepository<Customer>(_context);
             Shipments = new GenericRepository<Shipment>(_context);

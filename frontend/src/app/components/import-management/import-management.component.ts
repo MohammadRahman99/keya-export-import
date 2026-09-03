@@ -1,75 +1,610 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ExportImportDataService } from '../../services/export-import-data.service';
+import { FormsModule } from '@angular/forms';
+import { ExportImportDataService, ImportPO, SupplierBid } from '../../services/export-import-data.service';
+
+export type AuditTimeframe = 'THIS_MONTH' | 'THIS_YEAR' | 'TARGETED_MONTH' | 'LIFETIME';
 
 @Component({
   selector: 'app-import-management',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="p-6 bg-white rounded-xl border border-slate-200 shadow-sm space-y-6">
+    <div class="space-y-6">
       
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-        <div>
-          <span class="text-xs font-bold uppercase tracking-wider text-blue-700">Raw Material Procurement</span>
-          <h3 class="text-xl font-extrabold text-slate-900">Import Management (PO, PI & LC)</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Manage Purchase Orders, Proforma Invoices, and Letter of Credit (LC) lifecycles for raw cotton and dye consignments.</p>
+      <!-- Top Banner -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-4">
+          <img src="assets/logo/keya-logo.png" alt="Keya Group Logo" class="h-12 w-auto object-contain">
+          <div>
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Keya Raw Material Imports</span>
+            <h2 class="text-2xl font-black text-slate-900">Import Purchase Orders & LC Lifecycle Desk</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Manage raw material imports, evaluate supplier bids, issue POs, open LCs, and track shipment status.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Investigating Officer & Admin PDF Report Generator Button -->
+          @if (isInvestigatingOfficer() || isAdmin()) {
+            <button 
+              (click)="openPdfModal()"
+              class="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20">
+              <span>📄 Generate Customized Audit PDF</span>
+            </button>
+          }
+
+          <!-- Admin & Operator Create PO Button -->
+          @if (!isInvestigatingOfficer()) {
+            <button 
+              (click)="openAddPoModal()"
+              class="px-5 py-3 bg-blue-700 hover:bg-blue-800 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-blue-700/20">
+              <span>+ Create New Import PO</span>
+            </button>
+          }
         </div>
       </div>
 
-      <!-- Import PO & LC Table -->
-      <div class="overflow-x-auto rounded-lg border border-slate-200">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-50 text-slate-700 uppercase font-bold border-b border-slate-200">
-            <tr>
-              <th class="py-3 px-4">PO & PI Reference</th>
-              <th class="py-3 px-4">LC Number</th>
-              <th class="py-3 px-4">Supplier Name</th>
-              <th class="py-3 px-4">Product & Quantity</th>
-              <th class="py-3 px-4 text-right">Unit Price</th>
-              <th class="py-3 px-4 text-right">Total LC Value</th>
-              <th class="py-3 px-4">Expected Arrival</th>
-              <th class="py-3 px-4">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 font-medium">
-            @for (po of dataService.importPOs(); track po.poNumber) {
-              <tr class="hover:bg-slate-50 transition">
-                <td class="py-3.5 px-4 space-y-0.5">
-                  <div class="font-bold text-slate-900 font-mono">{{ po.poNumber }}</div>
-                  <div class="text-[11px] font-mono text-slate-500">PI: {{ po.piNumber }}</div>
-                </td>
-                <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
-                  {{ po.lcNumber }}
-                </td>
-                <td class="py-3.5 px-4 text-slate-800 font-semibold">{{ po.supplierName }}</td>
-                <td class="py-3.5 px-4 space-y-0.5">
-                  <div class="font-semibold text-slate-900">{{ po.productName }}</div>
-                  <div class="text-[11px] text-slate-500 font-mono">Qty: {{ po.quantity.toLocaleString() }} {{ po.unit }}</div>
-                </td>
-                <td class="py-3.5 px-4 text-right font-mono text-slate-700">
-                  {{ dataService.formatValue(po.unitPriceUSD) }} / {{ po.unit }}
-                </td>
-                <td class="py-3.5 px-4 text-right font-mono font-extrabold text-emerald-700 text-sm">
-                  {{ dataService.formatValue(po.totalValueUSD) }}
-                </td>
-                <td class="py-3.5 px-4 font-mono text-slate-700">
-                  📅 {{ po.expectedArrival }}
-                </td>
-                <td class="py-3.5 px-4">
-                  <span [class]="po.status === 'In Transit' ? 'px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200' : 'px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200'">
-                    {{ po.status }}
-                  </span>
-                </td>
+      <!-- Supplier Bids Evaluation Matrix -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-900 font-mono text-[10px] font-bold">REVERSE TENDER ENGINE</span>
+            <h3 class="text-lg font-black text-slate-900 mt-1">Live Supplier Bids Submitted for Keya Tenders</h3>
+          </div>
+          <span class="text-xs font-mono font-bold text-slate-500">{{ dataService.supplierBids().length }} Bids Received</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Bid Code</th>
+                <th class="p-3.5">Tender Code</th>
+                <th class="p-3.5">Supplier Company</th>
+                <th class="p-3.5">Offered Unit Price</th>
+                <th class="p-3.5">Lead Time</th>
+                <th class="p-3.5">Proposal Details</th>
+                <th class="p-3.5">Status</th>
+                @if (!isInvestigatingOfficer()) {
+                  <th class="p-3.5 text-right">Action</th>
+                }
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (bid of dataService.supplierBids(); track bid.id) {
+                <tr class="hover:bg-slate-50 transition">
+                  <td class="p-3.5 font-mono font-bold text-blue-900">{{ bid.bidCode }}</td>
+                  <td class="p-3.5 font-mono text-slate-500">{{ bid.tenderCode }}</td>
+                  <td class="p-3.5">
+                    <div class="font-bold text-slate-900">{{ bid.supplierCompanyName }}</div>
+                    <div class="text-[10px] text-slate-500 font-mono">{{ bid.contactEmail }}</div>
+                  </td>
+                  <td class="p-3.5 font-mono font-extrabold text-emerald-700">
+                    {{ dataService.formatValue(bid.offeredUnitPriceUSD) }} / Unit
+                  </td>
+                  <td class="p-3.5 font-mono font-bold text-slate-700">{{ bid.deliveryLeadTimeDays }} Days</td>
+                  <td class="p-3.5 text-slate-600 max-w-xs truncate">{{ bid.proposalDetails }}</td>
+                  <td class="p-3.5">
+                    <span [class]="getBidBadgeClass(bid.status)">{{ bid.status }}</span>
+                  </td>
+                  @if (!isInvestigatingOfficer()) {
+                    <td class="p-3.5 text-right">
+                      <button 
+                        (click)="acceptBidAndGeneratePo(bid)"
+                        [disabled]="bid.status === 'Accepted'"
+                        class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-lg text-[11px] transition shadow">
+                        {{ bid.status === 'Accepted' ? 'PO Generated' : 'Accept & Issue PO' }}
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <!-- IMPORT PO DIRECTORY & MATRIX -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h3 class="text-lg font-black text-slate-900">Active Import Purchase Orders (POs)</h3>
+            <p class="text-xs text-slate-500">Track PO, PI & LC lifecycle statuses across raw material shipments.</p>
+          </div>
+
+          <!-- Search Filter -->
+          <div class="w-full sm:w-72">
+            <input 
+              type="text" 
+              [(ngModel)]="poSearchFilter"
+              placeholder="Search PO, LC, or Supplier..." 
+              class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600">
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">PO Ref</th>
+                <th class="p-3.5">PI / LC Numbers</th>
+                <th class="p-3.5">Supplier & Raw Material</th>
+                <th class="p-3.5">Quantity</th>
+                <th class="p-3.5">Total Value (USD)</th>
+                <th class="p-3.5">ETA Date</th>
+                <th class="p-3.5">Status</th>
+                @if (!isInvestigatingOfficer()) {
+                  <th class="p-3.5 text-right">Actions</th>
+                }
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-medium">
+              @for (po of filteredImportPOs(); track po.poNumber) {
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-3.5 font-mono font-bold text-slate-900">{{ po.poNumber }}</td>
+                  <td class="p-3.5 font-mono text-[11px]">
+                    <div class="text-blue-900 font-bold">PI: {{ po.piNumber }}</div>
+                    <div class="text-slate-500">LC: {{ po.lcNumber }}</div>
+                  </td>
+                  <td class="p-3.5">
+                    <div class="font-bold text-slate-900">{{ po.supplierName }}</div>
+                    <div class="text-slate-500 text-[11px]">{{ po.productName }}</div>
+                  </td>
+                  <td class="p-3.5 font-mono font-bold text-slate-800">{{ po.quantity.toLocaleString() }} {{ po.unit }}</td>
+                  <td class="p-3.5 font-mono font-black text-emerald-700">
+                    {{ dataService.formatValue(po.totalValueUSD) }}
+                  </td>
+                  <td class="p-3.5 font-mono text-slate-600">{{ po.expectedArrival }}</td>
+                  <td class="p-3.5">
+                    <span [class]="getPoBadgeClass(po.status)">{{ po.status }}</span>
+                  </td>
+                  @if (!isInvestigatingOfficer()) {
+                    <td class="p-3.5 text-right">
+                      <div class="flex items-center justify-end gap-2">
+                        <button 
+                          (click)="openEditPoModal(po)"
+                          class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg border border-slate-300 text-[11px] transition">
+                          ✏️ Edit PO
+                        </button>
+                        @if (isAdmin()) {
+                          <button 
+                            (click)="deletePo(po)"
+                            class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-lg border border-red-200 text-[11px] transition">
+                            🗑️ Delete
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CUSTOMIZED AUDIT PDF REPORT GENERATOR MODAL -->
+      @if (showPdfModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div class="bg-white w-full max-w-4xl rounded-3xl p-6 sm:p-10 space-y-6 shadow-2xl border border-slate-200 text-slate-900 my-8">
+            
+            <!-- Modal Actions Bar -->
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4 print:hidden">
+              <div class="flex items-center gap-3">
+                <span class="px-2.5 py-1 rounded bg-slate-900 text-white font-mono text-xs font-bold">PDF GENERATOR</span>
+                <h3 class="text-lg font-black text-slate-900">Customized Audit Report Studio</h3>
+              </div>
+              
+              <div class="flex items-center gap-3">
+                <button 
+                  (click)="printPdfReport()"
+                  class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg">
+                  <span>🖨️ Print / Save as PDF</span>
+                </button>
+                <button (click)="showPdfModal.set(false)" class="text-slate-400 hover:text-slate-700 text-xl font-bold">✕</button>
+              </div>
+            </div>
+
+            <!-- Report Customizer Controls (Hidden on Print) -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 grid sm:grid-cols-2 gap-4 text-xs print:hidden">
+              <div>
+                <label class="block text-slate-700 font-bold mb-1">Target Timeframe / Date Filter</label>
+                <select [(ngModel)]="pdfTimeframe" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-700">
+                  <option value="THIS_MONTH">This Month (September 2026)</option>
+                  <option value="THIS_YEAR">This Year (Annual 2026)</option>
+                  <option value="TARGETED_MONTH">Targeted Custom Month (August 2026)</option>
+                  <option value="LIFETIME">Lifetime Historical Audit Records</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-slate-700 font-bold mb-1">Audit Clearance Category</label>
+                <select [(ngModel)]="pdfCategory" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-700">
+                  <option value="CUSTOMS_DUTY">Customs Tariff & Duty Clearance Audit</option>
+                  <option value="RAW_COTTON_LC">Raw Material LC & Supplier Bids Audit</option>
+                  <option value="VESSEL_DISPATCH">Vessel Cargo & Container Dispatch Audit</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- PRINTABLE AUDIT REPORT PAGE (WITH OFFICIAL LOGO) -->
+            <div id="printable-audit-report" class="space-y-6 p-6 bg-white border border-slate-200 rounded-2xl">
+              
+              <!-- Report Header with Official Keya Group Logo -->
+              <div class="flex items-start justify-between border-b-2 border-slate-900 pb-4">
+                <div class="flex items-center gap-4">
+                  <img src="assets/logo/keya-logo.png" alt="Keya Group Official Logo" class="h-16 w-auto object-contain">
+                  <div>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tight">KEYA GROUP OF INDUSTRIES</h1>
+                    <p class="text-xs font-semibold text-slate-600">Customs, Duty & Commercial Audit Department</p>
+                    <p class="text-[10px] text-slate-400 font-mono">Gazipur Industrial Complex, Dhaka, Bangladesh</p>
+                  </div>
+                </div>
+
+                <div class="text-right font-mono text-xs">
+                  <div class="px-3 py-1 rounded bg-slate-900 text-white font-bold inline-block mb-1">OFFICIAL AUDIT REPORT</div>
+                  <div class="text-slate-500 text-[11px]">Audit Ref: AUD-KEYA-2026-9041</div>
+                  <div class="text-slate-500 text-[11px]">Date Generated: {{ getReportGeneratedDate() }}</div>
+                  <div class="text-blue-900 font-extrabold text-[11px]">Timeframe: {{ getTimeframeLabel() }}</div>
+                </div>
+              </div>
+
+              <!-- Report Executive Summary Cards -->
+              <div class="grid grid-cols-4 gap-3 text-xs font-mono">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div class="text-slate-500 text-[10px]">Total Audited Value</div>
+                  <div class="text-base font-black text-slate-900">$2,448,000</div>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div class="text-slate-500 text-[10px]">Audited PO Items</div>
+                  <div class="text-base font-black text-blue-900">{{ filteredImportPOs().length }} Orders</div>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div class="text-slate-500 text-[10px]">Customs Compliance</div>
+                  <div class="text-base font-black text-emerald-700">100% Passed</div>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div class="text-slate-500 text-[10px]">Discrepancies / Flags</div>
+                  <div class="text-base font-black text-emerald-600">0 Exceptions</div>
+                </div>
+              </div>
+
+              <!-- Audited PO Table -->
+              <div class="space-y-2">
+                <h4 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider">Audited Import Purchase Orders Detail ({{ getTimeframeLabel() }})</h4>
+                
+                <table class="w-full text-left text-xs border border-slate-200">
+                  <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] border-b border-slate-200">
+                    <tr>
+                      <th class="p-2 border-r">PO Ref</th>
+                      <th class="p-2 border-r">PI / LC Ref</th>
+                      <th class="p-2 border-r">Supplier & Raw Material</th>
+                      <th class="p-2 border-r">Quantity</th>
+                      <th class="p-2 border-r">Value (USD)</th>
+                      <th class="p-2">Audit Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 font-mono text-[11px]">
+                    @for (po of filteredImportPOs(); track po.poNumber) {
+                      <tr>
+                        <td class="p-2 border-r font-bold text-slate-900">{{ po.poNumber }}</td>
+                        <td class="p-2 border-r">{{ po.lcNumber }}</td>
+                        <td class="p-2 border-r font-sans">{{ po.supplierName }} ({{ po.productName }})</td>
+                        <td class="p-2 border-r font-bold">{{ po.quantity }} {{ po.unit }}</td>
+                        <td class="p-2 border-r font-bold text-emerald-700">{{ dataService.formatValue(po.totalValueUSD) }}</td>
+                        <td class="p-2 font-sans font-bold text-emerald-700">✓ Audited & Verified</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Official Seal & Auditor Signature Block -->
+              <div class="pt-6 border-t-2 border-slate-200 flex justify-between items-end text-xs">
+                <div class="space-y-1">
+                  <div class="w-24 h-24 rounded-full border-4 border-emerald-600/30 flex items-center justify-center font-black text-emerald-800 text-[10px] uppercase text-center p-2 transform -rotate-12 bg-emerald-50">
+                    OFFICIALLY AUDITED & PASSED
+                  </div>
+                  <div class="text-[10px] text-slate-500 font-mono">Verified Stamp #KEYA-AUD-2026</div>
+                </div>
+
+                <div class="text-center space-y-1">
+                  <div class="font-bold text-slate-900 border-b border-slate-900 pb-1 px-8">
+                    {{ dataService.currentUser()?.name || 'Major Saifuddin Ahmed' }}
+                  </div>
+                  <div class="text-xs font-semibold text-slate-600">{{ dataService.currentUser()?.department || 'Investigating Officer & Lead Auditor' }}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">Keya Group Compliance Audit Board</div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      }
+
+      <!-- CREATE / EDIT IMPORT PO MODAL -->
+      @if (showPoModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Import Operation</span>
+                <h3 class="text-lg font-black text-slate-900">
+                  {{ isEditMode() ? 'Edit Import PO Details' : 'Create New Import PO' }}
+                </h3>
+              </div>
+              <button (click)="closePoModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+              <div>
+                <label class="block text-slate-700 font-semibold mb-1">Supplier Company Name</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="formSupplierName" 
+                  placeholder="e.g. Queensland Cotton Corp" 
+                  class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-blue-600">
+              </div>
+
+              <div>
+                <label class="block text-slate-700 font-semibold mb-1">Import Raw Material Product</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="formProductName" 
+                  placeholder="e.g. Australian Raw Cotton Bales" 
+                  class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-blue-600">
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-slate-700 font-semibold mb-1">Quantity</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="formQuantity" 
+                    placeholder="1200" 
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono focus:outline-none focus:border-blue-600">
+                </div>
+                <div>
+                  <label class="block text-slate-700 font-semibold mb-1">Unit</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="formUnit" 
+                    placeholder="Bales" 
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold focus:outline-none focus:border-blue-600">
+                </div>
+                <div>
+                  <label class="block text-slate-700 font-semibold mb-1">Unit Price (USD)</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="formUnitPrice" 
+                    placeholder="390.0" 
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono focus:outline-none focus:border-blue-600">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-700 font-semibold mb-1">Lifecycle Status</label>
+                  <select 
+                    [(ngModel)]="formStatus" 
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold focus:outline-none focus:border-blue-600">
+                    <option value="PO Issued">PO Issued</option>
+                    <option value="PI Confirmed">PI Confirmed</option>
+                    <option value="LC Opened">LC Opened</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Received at Port">Received at Port</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-slate-700 font-semibold mb-1">Expected Arrival ETA</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="formEta" 
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono focus:outline-none focus:border-blue-600">
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+              <button 
+                (click)="closePoModal()" 
+                class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
+                Cancel
+              </button>
+              <button 
+                (click)="savePo()" 
+                class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-extrabold rounded-xl text-xs shadow-md">
+                {{ isEditMode() ? 'Update Import PO' : 'Create Import PO' }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      }
 
     </div>
   `
 })
 export class ImportManagementComponent {
   dataService = inject(ExportImportDataService);
+
+  poSearchFilter = '';
+  showPoModal = signal(false);
+  showPdfModal = signal(false);
+  isEditMode = signal(false);
+  editingPoNumber = signal<string | null>(null);
+
+  // PDF Generator Customizer Signals
+  pdfTimeframe: AuditTimeframe = 'THIS_MONTH';
+  pdfCategory = 'CUSTOMS_DUTY';
+
+  // Form Fields
+  formSupplierName = '';
+  formProductName = '';
+  formQuantity = 1200;
+  formUnit = 'Bales';
+  formUnitPrice = 390.0;
+  formStatus: ImportPO['status'] = 'PO Issued';
+  formEta = '2026-09-25';
+
+  isAdmin(): boolean {
+    return this.dataService.currentUser()?.role === 'Admin';
+  }
+
+  isInvestigatingOfficer(): boolean {
+    return this.dataService.currentUser()?.role === 'Investigating Officer';
+  }
+
+  openPdfModal() {
+    this.showPdfModal.set(true);
+  }
+
+  printPdfReport() {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
+  }
+
+  getReportGeneratedDate(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  getTimeframeLabel(): string {
+    const labels: Record<AuditTimeframe, string> = {
+      THIS_MONTH: 'This Month (September 2026)',
+      THIS_YEAR: 'Annual Fiscal Year 2026',
+      TARGETED_MONTH: 'Targeted Custom Month (August 2026)',
+      LIFETIME: 'Lifetime Historical Audit Data'
+    };
+    return labels[this.pdfTimeframe] || 'This Month';
+  }
+
+  filteredImportPOs(): ImportPO[] {
+    const q = this.poSearchFilter.toLowerCase().trim();
+    if (!q) return this.dataService.importPOs();
+    return this.dataService.importPOs().filter(po => 
+      po.poNumber.toLowerCase().includes(q) ||
+      po.supplierName.toLowerCase().includes(q) ||
+      po.productName.toLowerCase().includes(q) ||
+      po.lcNumber.toLowerCase().includes(q)
+    );
+  }
+
+  getBidBadgeClass(status: string): string {
+    if (status === 'Accepted') return 'px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold';
+    if (status === 'Under Review') return 'px-2.5 py-1 rounded bg-amber-100 text-amber-800 font-mono text-[10px] font-bold';
+    return 'px-2.5 py-1 rounded bg-blue-100 text-blue-800 font-mono text-[10px] font-bold';
+  }
+
+  getPoBadgeClass(status: string): string {
+    if (status === 'In Transit') return 'px-2.5 py-1 rounded bg-amber-100 text-amber-800 font-mono text-[10px] font-bold';
+    if (status === 'LC Opened') return 'px-2.5 py-1 rounded bg-blue-100 text-blue-800 font-mono text-[10px] font-bold';
+    if (status === 'Received at Port') return 'px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold';
+    return 'px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-mono text-[10px] font-bold';
+  }
+
+  acceptBidAndGeneratePo(bid: SupplierBid) {
+    this.dataService.supplierBids.update(list => list.map(b => b.id === bid.id ? { ...b, status: 'Accepted' as const } : b));
+    
+    const newPo: ImportPO = {
+      poNumber: `PO-IMP-2026-${Date.now().toString().slice(-3)}`,
+      piNumber: `PI-${bid.bidCode}`,
+      lcNumber: `LC-HSBC-2026-${Date.now().toString().slice(-3)}`,
+      supplierName: bid.supplierCompanyName,
+      productName: 'Raw Cotton Procurement Tender Bales',
+      quantity: 1500,
+      unit: 'Bales',
+      unitPriceUSD: bid.offeredUnitPriceUSD,
+      totalValueUSD: bid.offeredUnitPriceUSD * 1500,
+      currency: 'USD',
+      expectedArrival: '2026-09-28',
+      status: 'LC Opened'
+    };
+
+    this.dataService.importPOs.update(list => [newPo, ...list]);
+    alert(`Success! Bid ${bid.bidCode} accepted. Import PO ${newPo.poNumber} & LC generated.`);
+  }
+
+  openAddPoModal() {
+    this.isEditMode.set(false);
+    this.editingPoNumber.set(null);
+    this.formSupplierName = '';
+    this.formProductName = '';
+    this.formQuantity = 1200;
+    this.formUnit = 'Bales';
+    this.formUnitPrice = 390.0;
+    this.formStatus = 'PO Issued';
+    this.formEta = '2026-09-25';
+    this.showPoModal.set(true);
+  }
+
+  openEditPoModal(po: ImportPO) {
+    this.isEditMode.set(true);
+    this.editingPoNumber.set(po.poNumber);
+    this.formSupplierName = po.supplierName;
+    this.formProductName = po.productName;
+    this.formQuantity = po.quantity;
+    this.formUnit = po.unit;
+    this.formUnitPrice = po.unitPriceUSD;
+    this.formStatus = po.status;
+    this.formEta = po.expectedArrival;
+    this.showPoModal.set(true);
+  }
+
+  closePoModal() {
+    this.showPoModal.set(false);
+  }
+
+  savePo() {
+    if (!this.formSupplierName || !this.formProductName) return;
+    const totalVal = this.formQuantity * this.formUnitPrice;
+
+    if (this.isEditMode() && this.editingPoNumber()) {
+      const targetNo = this.editingPoNumber();
+      this.dataService.importPOs.update(list => list.map(p => {
+        if (p.poNumber === targetNo) {
+          return {
+            ...p,
+            supplierName: this.formSupplierName,
+            productName: this.formProductName,
+            quantity: this.formQuantity,
+            unit: this.formUnit,
+            unitPriceUSD: this.formUnitPrice,
+            totalValueUSD: totalVal,
+            status: this.formStatus,
+            expectedArrival: this.formEta
+          };
+        }
+        return p;
+      }));
+    } else {
+      const newPo: ImportPO = {
+        poNumber: `PO-IMP-2026-${Date.now().toString().slice(-3)}`,
+        piNumber: `PI-KEYA-${Date.now().toString().slice(-3)}`,
+        lcNumber: `LC-HSBC-2026-${Date.now().toString().slice(-3)}`,
+        supplierName: this.formSupplierName,
+        productName: this.formProductName,
+        quantity: this.formQuantity,
+        unit: this.formUnit,
+        unitPriceUSD: this.formUnitPrice,
+        totalValueUSD: totalVal,
+        currency: 'USD',
+        expectedArrival: this.formEta,
+        status: this.formStatus
+      };
+      this.dataService.importPOs.update(list => [newPo, ...list]);
+    }
+
+    this.closePoModal();
+  }
+
+  deletePo(po: ImportPO) {
+    if (confirm(`Are you sure you want to delete Import PO "${po.poNumber}" (${po.supplierName})?`)) {
+      this.dataService.importPOs.update(list => list.filter(p => p.poNumber !== po.poNumber));
+    }
+  }
 }

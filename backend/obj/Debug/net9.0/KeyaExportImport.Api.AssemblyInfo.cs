@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KeyaExportImport.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1f00b2df937cb829b9d96d64148bfab23bf40a19")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8e1503a403f4f3452e9b7486643680072f16ed0a")]
 [assembly: System.Reflection.AssemblyProductAttribute("KeyaExportImport.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KeyaExportImport.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

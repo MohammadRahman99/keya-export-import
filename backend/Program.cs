@@ -14,7 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configure EF Core DbContext (SQLite for lightweight zero-config persistence)
+// Configure EF Core DbContext (SQLite Data Source keya_erp.db)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=keya_erp.db"));
 
@@ -23,6 +23,10 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IImportPoRepository, ImportPoRepository>();
 builder.Services.AddScoped<IExportOrderRepository, ExportOrderRepository>();
+builder.Services.AddScoped<IB2bProductRepository, B2bProductRepository>();
+builder.Services.AddScoped<IBuyLeadRepository, BuyLeadRepository>();
+builder.Services.AddScoped<ITradeInquiryRepository, TradeInquiryRepository>();
+builder.Services.AddScoped<ISupplierBidRepository, SupplierBidRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Configure CORS Policy for Angular Frontend
@@ -38,7 +42,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seed Database Initial Enterprise Data
+// Auto Create Database & Seed Initial Enterprise Data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -51,7 +55,7 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Keya Group Enterprise ERP API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Keya Group Global B2B Trade & ERP API v1");
     });
 }
 
