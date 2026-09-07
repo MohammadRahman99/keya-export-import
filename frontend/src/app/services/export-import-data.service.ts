@@ -191,6 +191,9 @@ export interface BuyLead {
   expiryDate: string;
   specifications: string;
   type: 'BUYER_RFQ' | 'KEYA_TENDER';
+  // Binary Attachment Fields
+  imageBase64?: string;
+  imageContentType?: string;
 }
 
 export interface SupplierBid {
@@ -448,9 +451,10 @@ export class ExportImportDataService {
   }
 
   postBuyLead(lead: Partial<BuyLead>) {
+    const prefix = lead.type === 'KEYA_TENDER' ? 'TENDER' : 'RFQ';
     const newLead: BuyLead = {
       id: (this.buyLeads().length + 1).toString(),
-      leadCode: `RFQ-${Date.now().toString().slice(-4)}`,
+      leadCode: `${prefix}-${Date.now().toString().slice(-4)}`,
       title: lead.title || 'Buying Requirement',
       category: lead.category || 'Knitwear & Apparel',
       quantityNeeded: lead.quantityNeeded || '10,000 Pcs',
@@ -460,10 +464,12 @@ export class ExportImportDataService {
       companyName: lead.companyName || 'Global Sourcing Corp',
       buyerEmail: lead.buyerEmail || 'buyer@trade.com',
       buyerPhone: lead.buyerPhone || '+1 555 0192',
-      status: 'New RFQ',
-      expiryDate: '2026-10-15',
+      status: lead.type === 'KEYA_TENDER' ? 'Active Procurement Tender' : 'New RFQ',
+      expiryDate: lead.expiryDate || '2026-10-15',
       specifications: lead.specifications || 'Standard OEM Custom Packaging',
-      type: 'BUYER_RFQ'
+      type: lead.type || 'BUYER_RFQ',
+      imageBase64: lead.imageBase64,
+      imageContentType: lead.imageContentType || 'image/png'
     };
     this.buyLeads.update(list => [newLead, ...list]);
   }

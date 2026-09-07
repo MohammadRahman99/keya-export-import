@@ -19,7 +19,7 @@ export type AuditTimeframe = 'THIS_MONTH' | 'THIS_YEAR' | 'TARGETED_MONTH' | 'LI
           <div>
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Keya Raw Material Imports</span>
             <h2 class="text-2xl font-black text-slate-900">Import Purchase Orders & Procurement Tenders Desk</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Post Keya Import Tenders for suppliers, evaluate incoming bids, issue POs, and open LCs.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Post Keya Import Tenders with binary tech spec photos, evaluate supplier bids, issue POs & LCs.</p>
           </div>
         </div>
 
@@ -65,27 +65,43 @@ export type AuditTimeframe = 'THIS_MONTH' | 'THIS_YEAR' | 'TARGETED_MONTH' | 'LI
 
         <div class="grid md:grid-cols-2 gap-4 text-xs">
           @for (tender of getKeyaTenders(); track tender.id) {
-            <div class="p-5 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-sm hover:border-amber-500 transition">
-              <div class="flex justify-between items-start">
-                <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-mono font-bold text-[10px]">
-                  {{ tender.leadCode }}
-                </span>
-                <span class="font-mono font-bold text-amber-700 text-sm">
-                  Budget: {{ dataService.formatValue(tender.targetUnitPriceUSD) }} / Unit
-                </span>
+            <div class="p-5 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-sm hover:border-amber-500 transition flex flex-col justify-between">
+              <div class="space-y-3">
+                <div class="flex justify-between items-start">
+                  <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-mono font-bold text-[10px]">
+                    {{ tender.leadCode }}
+                  </span>
+                  <span class="font-mono font-bold text-amber-700 text-sm">
+                    Budget: {{ dataService.formatValue(tender.targetUnitPriceUSD) }} / Unit
+                  </span>
+                </div>
+
+                <h4 class="font-extrabold text-slate-900 text-sm leading-snug">{{ tender.title }}</h4>
+
+                <!-- BINARY ATTACHMENT DISPLAY -->
+                @if (tender.imageBase64) {
+                  <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
+                    <img 
+                      [src]="'data:' + (tender.imageContentType || 'image/png') + ';base64,' + tender.imageBase64" 
+                      alt="Tender Spec Photo" 
+                      class="h-20 w-20 object-cover rounded-lg border border-slate-300 shadow-sm shrink-0">
+                    <div class="text-[11px] text-slate-600">
+                      <span class="font-bold text-slate-900 block">🖼️ Raw Material Spec Photo</span>
+                      <span class="text-[10px] text-amber-700 font-mono font-bold">SQL VARBINARY(MAX) Storage</span>
+                    </div>
+                  </div>
+                }
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1 font-mono">
+                  <div class="font-sans font-bold text-slate-900 text-xs">📦 Volume Needed: {{ tender.quantityNeeded }}</div>
+                  <div class="text-slate-600 font-sans">⚓ Delivery Term: CIF Chattogram Port</div>
+                  <div class="text-amber-800 font-bold">⏰ Tender Expiry Date: {{ tender.expiryDate }}</div>
+                </div>
+
+                <p class="p-2.5 bg-slate-100/70 rounded-lg text-slate-700 text-[11px] leading-relaxed">
+                  <strong class="text-slate-900">Specifications:</strong> {{ tender.specifications }}
+                </p>
               </div>
-
-              <h4 class="font-extrabold text-slate-900 text-sm leading-snug">{{ tender.title }}</h4>
-
-              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1 font-mono">
-                <div class="font-sans font-bold text-slate-900 text-xs">📦 Volume Needed: {{ tender.quantityNeeded }}</div>
-                <div class="text-slate-600 font-sans">⚓ Delivery Term: CIF Chattogram Port</div>
-                <div class="text-amber-800 font-bold">⏰ Tender Expiry Date: {{ tender.expiryDate }}</div>
-              </div>
-
-              <p class="p-2.5 bg-slate-100/70 rounded-lg text-slate-700 text-[11px] leading-relaxed">
-                <strong class="text-slate-900">Specifications:</strong> {{ tender.specifications }}
-              </p>
             </div>
           }
         </div>
@@ -231,10 +247,10 @@ export type AuditTimeframe = 'THIS_MONTH' | 'THIS_YEAR' | 'TARGETED_MONTH' | 'LI
         </div>
       </div>
 
-      <!-- KEYA GROUP EMPLOYEE POST IMPORT TENDER MODAL -->
+      <!-- KEYA GROUP EMPLOYEE POST IMPORT TENDER MODAL WITH BINARY UPLOAD -->
       @if (showTenderModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-          <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+          <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200 text-slate-900 my-8">
             
             <div class="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
@@ -245,7 +261,7 @@ export type AuditTimeframe = 'THIS_MONTH' | 'THIS_YEAR' | 'TARGETED_MONTH' | 'LI
             </div>
 
             <p class="text-xs text-slate-600 bg-amber-50 p-3 rounded-xl border border-amber-200">
-              Post an official Keya Group raw material import requirement (cotton, dyes, chemicals). Global suppliers will view this tender on the public portal and submit competitive bids.
+              Post an official raw material import requirement and attach a tech spec photo (stored as binary data in SQL Server).
             </p>
 
             <div class="space-y-4 text-xs">
@@ -256,6 +272,23 @@ export type AuditTimeframe = 'THIS_MONTH' | 'THIS_YEAR' | 'TARGETED_MONTH' | 'LI
                   [(ngModel)]="tenderTitle" 
                   placeholder="e.g. Procurement: 500 MT Australian Raw Cotton Bales" 
                   class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-medium">
+              </div>
+
+              <!-- BINARY IMAGE FILE UPLOAD FOR TENDER -->
+              <div>
+                <label class="block text-slate-700 font-bold mb-1">📷 Attach Raw Material Spec Photo (Binary VARBINARY Upload)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  (change)="onTenderFileSelected($event)"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-slate-900 font-mono text-xs">
+                
+                @if (selectedTenderImageBase64) {
+                  <div class="mt-2 p-2 bg-slate-100 rounded-xl border border-slate-300 flex items-center gap-3">
+                    <img [src]="'data:' + selectedTenderContentType + ';base64,' + selectedTenderImageBase64" class="h-14 w-14 object-cover rounded border">
+                    <span class="text-[11px] text-amber-800 font-bold">✓ Binary byte array loaded!</span>
+                  </div>
+                }
               </div>
 
               <div class="grid grid-cols-2 gap-3">
@@ -576,7 +609,11 @@ export class ImportManagementComponent {
   pdfTimeframe: AuditTimeframe = 'THIS_MONTH';
   pdfCategory = 'CUSTOMS_DUTY';
 
-  // Import Tender Form Fields (Keya Staff Import Requirement)
+  // Binary Image Attachment State for Tender
+  selectedTenderImageBase64: string | null = null;
+  selectedTenderContentType: string = 'image/png';
+
+  // Import Tender Form Fields
   tenderTitle = '';
   tenderCategory = 'Raw Cotton & Fiber';
   tenderQty = '500 MT (2,300 Bales)';
@@ -605,8 +642,24 @@ export class ImportManagementComponent {
     return this.dataService.buyLeads().filter(l => l.type === 'KEYA_TENDER');
   }
 
+  onTenderFileSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      this.selectedTenderContentType = file.type || 'image/png';
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        this.selectedTenderImageBase64 = result.split(',')[1] || result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   openTenderModal() {
     this.tenderTitle = '';
+    this.selectedTenderImageBase64 = null;
     this.showTenderModal.set(true);
   }
 
@@ -616,9 +669,7 @@ export class ImportManagementComponent {
       return;
     }
 
-    const newTender: BuyLead = {
-      id: (this.dataService.buyLeads().length + 1).toString(),
-      leadCode: `TENDER-${Date.now().toString().slice(-4)}`,
+    this.dataService.postBuyLead({
       title: this.tenderTitle,
       category: this.tenderCategory,
       quantityNeeded: this.tenderQty || '500 MT',
@@ -628,14 +679,14 @@ export class ImportManagementComponent {
       companyName: 'Keya Group of Industries',
       buyerEmail: this.dataService.currentUser()?.email || 'procurement@keyagroupbd.com',
       buyerPhone: '+880 2 9888888',
-      status: 'Active Procurement Tender',
       expiryDate: this.tenderExpiry || '2026-10-15',
       specifications: this.tenderSpecs || 'CIF Chattogram Port Terms',
-      type: 'KEYA_TENDER'
-    };
+      type: 'KEYA_TENDER',
+      imageBase64: this.selectedTenderImageBase64 || undefined,
+      imageContentType: this.selectedTenderContentType
+    });
 
-    this.dataService.buyLeads.update(list => [newTender, ...list]);
-    alert(`Success! Keya Import Tender "${newTender.title}" (${newTender.leadCode}) published. Suppliers can now submit bids on the public site.`);
+    alert(`Success! Keya Import Tender "${this.tenderTitle}" published with binary image attachment.`);
     this.showTenderModal.set(false);
   }
 

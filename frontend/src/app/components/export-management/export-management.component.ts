@@ -17,7 +17,7 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
           <div>
             <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Keya Garments & Yarn Outbound Exports</span>
             <h2 class="text-2xl font-black text-slate-900">Export Sales Orders & Buyer RFQs Desk</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Catch incoming buyer RFQs, communicate via Email/WhatsApp, issue sales orders, and clear customs.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Catch incoming buyer RFQs with tech pack photos, communicate via Email/WhatsApp, issue sales orders.</p>
           </div>
         </div>
 
@@ -63,39 +63,55 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
 
         <div class="grid md:grid-cols-2 gap-4 text-xs">
           @for (lead of getBuyerRfqs(); track lead.id) {
-            <div class="p-5 bg-white rounded-2xl border-2 border-slate-200 space-y-3 shadow-sm hover:border-emerald-600 transition">
+            <div class="p-5 bg-white rounded-2xl border-2 border-slate-200 space-y-3 shadow-sm hover:border-emerald-600 transition flex flex-col justify-between">
               
-              <div class="flex justify-between items-start border-b border-slate-100 pb-2">
-                <div>
-                  <span class="font-mono font-extrabold text-emerald-800 text-xs px-2 py-0.5 bg-emerald-50 rounded border border-emerald-200">
-                    {{ lead.leadCode }}
+              <div class="space-y-3">
+                <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                  <div>
+                    <span class="font-mono font-extrabold text-emerald-800 text-xs px-2 py-0.5 bg-emerald-50 rounded border border-emerald-200">
+                      {{ lead.leadCode }}
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-mono ml-2">Status: {{ lead.status }}</span>
+                  </div>
+                  <span class="font-mono font-extrabold text-emerald-700 text-sm">
+                    {{ dataService.formatValue(lead.targetUnitPriceUSD) }} / Unit Target
                   </span>
-                  <span class="text-[10px] text-slate-400 font-mono ml-2">Status: {{ lead.status }}</span>
                 </div>
-                <span class="font-mono font-extrabold text-emerald-700 text-sm">
-                  {{ dataService.formatValue(lead.targetUnitPriceUSD) }} / Unit Target
-                </span>
-              </div>
 
-              <div>
-                <h4 class="font-extrabold text-slate-900 text-sm leading-snug">{{ lead.title }}</h4>
-                <p class="text-slate-500 text-[11px] font-medium">Requested Volume: <strong class="text-slate-900 font-mono">{{ lead.quantityNeeded }}</strong></p>
-              </div>
+                <div>
+                  <h4 class="font-extrabold text-slate-900 text-sm leading-snug">{{ lead.title }}</h4>
+                  <p class="text-slate-500 text-[11px] font-medium">Requested Volume: <strong class="text-slate-900 font-mono">{{ lead.quantityNeeded }}</strong></p>
+                </div>
 
-              <!-- Full Buyer Contact Card for Keya Admin Communication -->
-              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1 font-mono">
-                <div class="font-sans font-extrabold text-slate-900 text-xs">🏢 Company: {{ lead.companyName || lead.buyerName }}</div>
-                <div class="text-slate-700 font-sans">👤 Contact Person: {{ lead.buyerName }}</div>
-                <div class="text-blue-900">📧 Email: <a [href]="'mailto:' + lead.buyerEmail" class="underline font-bold hover:text-blue-700">{{ lead.buyerEmail }}</a></div>
-                @if (lead.buyerPhone) {
-                  <div class="text-emerald-800 font-bold">📱 Phone/WhatsApp: <a [href]="'https://wa.me/' + cleanPhone(lead.buyerPhone)" target="_blank" class="underline hover:text-emerald-600">{{ lead.buyerPhone }}</a></div>
+                <!-- BINARY ATTACHMENT DISPLAY -->
+                @if (lead.imageBase64) {
+                  <div class="p-2 bg-emerald-50/60 rounded-xl border border-emerald-200 flex items-center gap-3">
+                    <img 
+                      [src]="'data:' + (lead.imageContentType || 'image/png') + ';base64,' + lead.imageBase64" 
+                      alt="Buyer Sample Attachment" 
+                      class="h-24 w-24 object-cover rounded-lg border border-emerald-300 shadow-sm shrink-0">
+                    <div class="text-[11px] text-slate-700">
+                      <span class="font-extrabold text-emerald-950 block">🖼️ Tech Pack / Sample Photo</span>
+                      <span class="text-[10px] text-emerald-700 font-mono font-bold">SQL VARBINARY(MAX) Storage</span>
+                    </div>
+                  </div>
                 }
-                <div class="text-slate-600 font-sans">🌐 Destination: <strong class="text-slate-900">{{ lead.destinationCountry }}</strong></div>
-              </div>
 
-              <p class="p-2.5 bg-slate-100/70 rounded-lg text-slate-700 text-[11px] leading-relaxed">
-                <strong class="text-slate-900">Specs:</strong> {{ lead.specifications }}
-              </p>
+                <!-- Full Buyer Contact Card for Keya Admin Communication -->
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1 font-mono">
+                  <div class="font-sans font-extrabold text-slate-900 text-xs">🏢 Company: {{ lead.companyName || lead.buyerName }}</div>
+                  <div class="text-slate-700 font-sans">👤 Contact Person: {{ lead.buyerName }}</div>
+                  <div class="text-blue-900">📧 Email: <a [href]="'mailto:' + lead.buyerEmail" class="underline font-bold hover:text-blue-700">{{ lead.buyerEmail }}</a></div>
+                  @if (lead.buyerPhone) {
+                    <div class="text-emerald-800 font-bold">📱 Phone/WhatsApp: <a [href]="'https://wa.me/' + cleanPhone(lead.buyerPhone)" target="_blank" class="underline hover:text-emerald-600">{{ lead.buyerPhone }}</a></div>
+                  }
+                  <div class="text-slate-600 font-sans">🌐 Destination: <strong class="text-slate-900">{{ lead.destinationCountry }}</strong></div>
+                </div>
+
+                <p class="p-2.5 bg-slate-100/70 rounded-lg text-slate-700 text-[11px] leading-relaxed">
+                  <strong class="text-slate-900">Specs:</strong> {{ lead.specifications }}
+                </p>
+              </div>
 
               <!-- Action Communication Buttons for Keya Admin -->
               @if (!isInvestigatingOfficer()) {
@@ -205,10 +221,10 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
         </div>
       </div>
 
-      <!-- KEYA ADMIN / STAFF POST BUYER RFQ MODAL -->
+      <!-- KEYA ADMIN / STAFF POST BUYER RFQ MODAL WITH BINARY UPLOAD -->
       @if (showRfqModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-          <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+          <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200 text-slate-900 my-8">
             
             <div class="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
@@ -219,7 +235,7 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
             </div>
 
             <p class="text-xs text-slate-600 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
-              Record a new international buyer requirement received offline via email, phone, or trade fair.
+              Record a new buyer lead and attach a tech pack / sample image (stored as binary data in SQL Server).
             </p>
 
             <div class="space-y-4 text-xs">
@@ -248,6 +264,23 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
               <div>
                 <label class="block text-slate-700 font-bold mb-1">Requirement Title *</label>
                 <input type="text" [(ngModel)]="rfqTitle" placeholder="e.g. 20,000 Pcs Heavyweight Fleece Hoodies" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900">
+              </div>
+
+              <!-- BINARY IMAGE FILE UPLOAD FOR RFQ -->
+              <div>
+                <label class="block text-slate-700 font-bold mb-1">📷 Attach Tech Pack / Sample Photo (Binary VARBINARY Upload)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  (change)="onRfqFileSelected($event)"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-slate-900 font-mono text-xs">
+                
+                @if (selectedRfqImageBase64) {
+                  <div class="mt-2 p-2 bg-slate-100 rounded-xl border border-slate-300 flex items-center gap-3">
+                    <img [src]="'data:' + selectedRfqContentType + ';base64,' + selectedRfqImageBase64" class="h-14 w-14 object-cover rounded border">
+                    <span class="text-[11px] text-emerald-800 font-bold">✓ Binary byte array loaded!</span>
+                  </div>
+                }
               </div>
 
               <div class="grid grid-cols-3 gap-3">
@@ -385,6 +418,10 @@ export class ExportManagementComponent {
   isEditMode = signal(false);
   editingOrderId = signal<string | null>(null);
 
+  // Binary Image State for RFQ
+  selectedRfqImageBase64: string | null = null;
+  selectedRfqContentType: string = 'image/png';
+
   // RFQ Entry Form
   rfqCompanyName = '';
   rfqBuyerName = '';
@@ -427,11 +464,27 @@ export class ExportManagementComponent {
     return this.dataService.buyLeads().filter(l => l.type === 'BUYER_RFQ' || !l.type);
   }
 
+  onRfqFileSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      this.selectedRfqContentType = file.type || 'image/png';
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        this.selectedRfqImageBase64 = result.split(',')[1] || result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   openAddRfqModal() {
     this.rfqCompanyName = '';
     this.rfqBuyerName = '';
     this.rfqEmail = '';
     this.rfqTitle = '';
+    this.selectedRfqImageBase64 = null;
     this.showRfqModal.set(true);
   }
 
@@ -451,10 +504,12 @@ export class ExportManagementComponent {
       targetUnitPriceUSD: this.rfqTargetPrice || 5.0,
       destinationCountry: this.rfqCountry || 'USA',
       specifications: this.rfqSpecs || 'Standard OEM Export Specification',
-      type: 'BUYER_RFQ'
+      type: 'BUYER_RFQ',
+      imageBase64: this.selectedRfqImageBase64 || undefined,
+      imageContentType: this.selectedRfqContentType
     });
 
-    alert(`Success! Buyer RFQ "${this.rfqTitle}" published.`);
+    alert(`Success! Buyer RFQ "${this.rfqTitle}" published with binary image attachment.`);
     this.showRfqModal.set(false);
   }
 

@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KeyaExportImport.Api.Core.Entities
 {
@@ -50,5 +51,11 @@ namespace KeyaExportImport.Api.Core.Entities
 
         [MaxLength(1000)]
         public string Specifications { get; set; } = string.Empty;
+
+        // Binary Image Attachment (VARBINARY(MAX) in SQL Server)
+        public byte[]? ImageBinary { get; set; }
+
+        [MaxLength(100)]
+        public string? ImageContentType { get; set; }
     }
 }

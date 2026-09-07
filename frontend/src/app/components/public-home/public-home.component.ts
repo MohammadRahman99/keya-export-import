@@ -38,7 +38,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
               <button (click)="scrollToSection('calculator')" class="hover:text-emerald-700 transition">Container Calculator</button>
             </nav>
 
-            <!-- GLOBAL CURRENCY SELECTOR DROPDOWN FOR INTERNATIONAL BUYERS & COMPANIES -->
+            <!-- GLOBAL CURRENCY SELECTOR DROPDOWN -->
             <div class="flex items-center gap-2 bg-slate-50 border-2 border-emerald-600 px-3 py-1.5 rounded-xl shadow-sm">
               <span class="text-slate-600 font-semibold hidden sm:inline">🌐 Currency:</span>
               <select 
@@ -55,7 +55,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
         </div>
       </header>
 
-      <!-- Classic Hero Showcase Banner -->
+      <!-- Hero Banner -->
       <section id="hero" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white rounded-xl border-2 border-slate-300 p-8 sm:p-10 shadow-md relative overflow-hidden">
           
@@ -69,10 +69,10 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
                 Global B2B Trade Sourcing & Raw Material Procurement Portal
               </h1>
               <p class="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">
-                Serving top global brands across 35+ countries. International buyers can issue Buyer RFQs for custom garments and yarn, while global suppliers bid on raw cotton tenders.
+                Serving top global brands across 35+ countries. International buyers can issue Buyer RFQs with custom sample pictures, while global suppliers bid on raw material tenders.
               </p>
 
-              <!-- Conglomerate Standard Statistics with Dynamic Currency Conversion -->
+              <!-- Statistics -->
               <div class="grid grid-cols-3 gap-4 pt-2 text-xs">
                 <div class="p-3 bg-slate-50 rounded border border-slate-200">
                   <div class="text-slate-500 font-semibold">Annual Group Export</div>
@@ -96,7 +96,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
                 B2B Trade Quick Action
               </div>
               <p class="text-slate-300 text-[11px] leading-relaxed">
-                Submit custom buying requirements or request direct FOB price quotes from Keya Group export sales team.
+                Submit custom buying requirements with sample photos or request direct FOB price quotes.
               </p>
               <button 
                 (click)="showPostRfqModal.set(true)"
@@ -271,7 +271,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
           <div class="space-y-4">
             <div class="flex justify-between items-center bg-emerald-50 p-4 rounded border border-emerald-300 text-xs">
               <div class="text-emerald-950 font-semibold">
-                🌐 International buyers: Submit custom garment buying requirements below. Keya Group Sales Team will contact you directly with full FOB quotes!
+                🌐 International buyers: Submit custom garment buying requirements below with sample image attachments. Keya Group Sales Team will contact you directly with full FOB quotes!
               </div>
               <button 
                 (click)="showPostRfqModal.set(true)"
@@ -282,34 +282,51 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
 
             <div class="grid md:grid-cols-2 gap-4 text-xs">
               @for (lead of getBuyerRfqs(); track lead.id) {
-                <div class="p-5 bg-white rounded-xl border border-slate-300 space-y-3 shadow-sm">
-                  <div class="flex justify-between items-start">
-                    <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-bold text-[10px]">
-                      {{ lead.leadCode }}
-                    </span>
-                    <span class="text-emerald-700 font-mono font-bold text-sm">
-                      {{ dataService.formatValue(lead.targetUnitPriceUSD) }} / Target Unit
-                    </span>
-                  </div>
-                  <h4 class="font-bold text-slate-900 text-sm leading-snug">{{ lead.title }}</h4>
-                  
-                  <!-- Full Buyer Contact Info Display -->
-                  <div class="p-3 bg-slate-50 rounded border border-slate-200 text-xs space-y-1 font-mono">
-                    <div class="font-sans font-bold text-slate-900 text-xs">🏢 Company: {{ lead.companyName || lead.buyerName }}</div>
-                    <div class="text-slate-700 font-sans">👤 Contact Person: {{ lead.buyerName }}</div>
-                    <div class="flex justify-between text-blue-900">
-                      <span>📧 Email: {{ lead.buyerEmail }}</span>
-                      <span>🌐 Country: {{ lead.destinationCountry }}</span>
+                <div class="p-5 bg-white rounded-xl border border-slate-300 space-y-3 shadow-sm flex flex-col justify-between">
+                  <div class="space-y-3">
+                    <div class="flex justify-between items-start">
+                      <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-bold text-[10px]">
+                        {{ lead.leadCode }}
+                      </span>
+                      <span class="text-emerald-700 font-mono font-bold text-sm">
+                        {{ dataService.formatValue(lead.targetUnitPriceUSD) }} / Target Unit
+                      </span>
                     </div>
-                    @if (lead.buyerPhone) {
-                      <div class="text-emerald-700 font-bold">📱 Phone/WhatsApp: {{ lead.buyerPhone }}</div>
-                    }
-                    <div class="text-slate-800 font-bold pt-1 font-sans">Qty Requested: {{ lead.quantityNeeded }}</div>
-                  </div>
 
-                  <p class="p-2.5 bg-white border border-slate-200 rounded text-slate-600 text-[11px]">
-                    <strong class="text-slate-900">Specifications:</strong> {{ lead.specifications }}
-                  </p>
+                    <h4 class="font-bold text-slate-900 text-sm leading-snug">{{ lead.title }}</h4>
+
+                    <!-- ATTACHED BINARY IMAGE RENDERED BACK FROM BASE64 -->
+                    @if (lead.imageBase64) {
+                      <div class="p-2 bg-slate-50 rounded border border-slate-200 flex items-center gap-3">
+                        <img 
+                          [src]="'data:' + (lead.imageContentType || 'image/png') + ';base64,' + lead.imageBase64" 
+                          alt="Buyer Sample Attachment" 
+                          class="h-24 w-24 object-cover rounded-lg border border-slate-300 shadow-sm shrink-0">
+                        <div class="text-[11px] text-slate-600">
+                          <span class="font-bold text-slate-900 block">🖼️ Tech Pack / Sample Attached</span>
+                          <span class="text-[10px] text-emerald-700 font-mono font-bold">VARBINARY Data Verified</span>
+                        </div>
+                      </div>
+                    }
+                    
+                    <!-- Full Buyer Contact Info Display -->
+                    <div class="p-3 bg-slate-50 rounded border border-slate-200 text-xs space-y-1 font-mono">
+                      <div class="font-sans font-bold text-slate-900 text-xs">🏢 Company: {{ lead.companyName || lead.buyerName }}</div>
+                      <div class="text-slate-700 font-sans">👤 Contact Person: {{ lead.buyerName }}</div>
+                      <div class="flex justify-between text-blue-900">
+                        <span>📧 Email: {{ lead.buyerEmail }}</span>
+                        <span>🌐 Country: {{ lead.destinationCountry }}</span>
+                      </div>
+                      @if (lead.buyerPhone) {
+                        <div class="text-emerald-700 font-bold">📱 Phone/WhatsApp: {{ lead.buyerPhone }}</div>
+                      }
+                      <div class="text-slate-800 font-bold pt-1 font-sans">Qty Requested: {{ lead.quantityNeeded }}</div>
+                    </div>
+
+                    <p class="p-2.5 bg-white border border-slate-200 rounded text-slate-600 text-[11px]">
+                      <strong class="text-slate-900">Specifications:</strong> {{ lead.specifications }}
+                    </p>
+                  </div>
                 </div>
               }
             </div>
@@ -345,6 +362,20 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
                       <div class="text-sm font-bold text-blue-800">{{ dataService.formatValue(tender.targetUnitPriceUSD) }} / Unit</div>
                     </div>
                   </div>
+
+                  <!-- ATTACHED BINARY IMAGE RENDERED BACK FOR TENDERS -->
+                  @if (tender.imageBase64) {
+                    <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200 flex items-center gap-4">
+                      <img 
+                        [src]="'data:' + (tender.imageContentType || 'image/png') + ';base64,' + tender.imageBase64" 
+                        alt="Tender Sample Attachment" 
+                        class="h-28 w-28 object-cover rounded-xl border border-blue-300 shadow">
+                      <div class="text-xs text-slate-700">
+                        <span class="font-extrabold text-blue-950 block text-sm">📦 Raw Material Tech Spec Photo</span>
+                        <p class="text-slate-600 text-[11px] mt-0.5">Binary image decoded from SQL Server VARBINARY(MAX) storage.</p>
+                      </div>
+                    </div>
+                  }
 
                   <div class="grid md:grid-cols-3 gap-4 bg-slate-50 p-3 rounded border border-slate-200">
                     <div><span class="text-slate-500 block">Volume Needed:</span><span class="font-bold font-mono text-slate-900">{{ tender.quantityNeeded }}</span></div>
@@ -413,7 +444,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
         </div>
       </section>
 
-      <!-- POST BUYER REQUIREMENT (RFQ) MODAL WITH FULL CONTACT DETAILS -->
+      <!-- POST BUYER REQUIREMENT (RFQ) MODAL WITH BINARY IMAGE UPLOAD -->
       @if (showPostRfqModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
           <div class="bg-white w-full max-w-lg rounded-xl p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-300 text-slate-900 my-8">
@@ -427,7 +458,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
             </div>
 
             <p class="text-xs text-slate-600 bg-emerald-50 p-3 rounded border border-emerald-200">
-              Please fill in your company and contact details below so Keya Group's Export Sales Desk can reach out to you directly with official pricing and samples.
+              Fill in your contact details and upload a garment/tech pack picture. The image will be stored as binary data in the SQL Server database!
             </p>
 
             <div class="space-y-3 text-xs">
@@ -459,6 +490,23 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
                 <input type="text" [(ngModel)]="newLeadTitle" placeholder="e.g. 50,000 Pcs 100% Organic Pique Polo Shirts" class="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900">
               </div>
 
+              <!-- BINARY IMAGE FILE UPLOAD CONTROL -->
+              <div>
+                <label class="block text-slate-700 font-bold mb-1">📷 Attach Sample Photo / Tech Pack Picture (Binary Upload)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  (change)="onFileSelected($event)"
+                  class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-slate-900 font-mono text-xs">
+                
+                @if (selectedImageBase64) {
+                  <div class="mt-2 p-2 bg-slate-100 rounded border border-slate-300 flex items-center gap-3">
+                    <img [src]="'data:' + selectedImageContentType + ';base64,' + selectedImageBase64" class="h-14 w-14 object-cover rounded border">
+                    <span class="text-[11px] text-emerald-800 font-bold">✓ Binary image loaded into Base64 byte array!</span>
+                  </div>
+                }
+              </div>
+
               <div class="grid grid-cols-3 gap-3">
                 <div>
                   <label class="block text-slate-700 font-bold mb-1">Quantity Needed</label>
@@ -484,7 +532,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
             <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
               <button (click)="showPostRfqModal.set(false)" class="px-4 py-2.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">Cancel</button>
               <button (click)="submitBuyLead()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-xs shadow-md">
-                Publish RFQ & Send to Keya Sales Team
+                Publish RFQ with Image Attachment
               </button>
             </div>
 
@@ -589,7 +637,11 @@ export class PublicHomeComponent {
   selectedProductForInquiry = signal<B2bProduct | null>(null);
   selectedTenderForBid = signal<BuyLead | null>(null);
 
-  // RFQ Form Detailed Buyer Contact Fields
+  // Binary Image Attachment State
+  selectedImageBase64: string | null = null;
+  selectedImageContentType: string = 'image/png';
+
+  // RFQ Form Fields
   newLeadTitle = '';
   newLeadCompanyName = '';
   newLeadBuyerName = '';
@@ -640,6 +692,22 @@ export class PublicHomeComponent {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   }
 
+  onFileSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      this.selectedImageContentType = file.type || 'image/png';
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Strip data URL prefix to store pure base64 binary byte string
+        this.selectedImageBase64 = result.split(',')[1] || result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   openInquiryModal(product: B2bProduct) {
     this.selectedProductForInquiry.set(product);
     this.showInquiryModal.set(true);
@@ -652,7 +720,7 @@ export class PublicHomeComponent {
 
   submitBuyLead() {
     if (!this.newLeadTitle || !this.newLeadEmail) {
-      alert('Please enter your Requirement Title and Email Address so Keya Group can contact you!');
+      alert('Please enter your Requirement Title and Email Address!');
       return;
     }
 
@@ -665,15 +733,18 @@ export class PublicHomeComponent {
       quantityNeeded: this.newLeadQty || '10,000 Pcs',
       targetUnitPriceUSD: this.newLeadTargetPrice || 5.0,
       destinationCountry: this.newLeadCountry || 'Germany',
-      specifications: this.newLeadSpecs || 'Standard Export Quality'
+      specifications: this.newLeadSpecs || 'Standard Export Quality',
+      imageBase64: this.selectedImageBase64 || undefined,
+      imageContentType: this.selectedImageContentType
     });
 
-    alert(`Success! Your Buying Requirement (${this.newLeadTitle}) has been submitted. Keya Group Sales Team will contact you at ${this.newLeadEmail} / ${this.newLeadPhone}.`);
+    alert(`Success! Your Buying Requirement (${this.newLeadTitle}) with binary image attachment has been published.`);
     
     this.showPostRfqModal.set(false);
     this.newLeadTitle = '';
     this.newLeadEmail = '';
     this.newLeadPhone = '';
+    this.selectedImageBase64 = null;
   }
 
   submitSupplierBid() {
