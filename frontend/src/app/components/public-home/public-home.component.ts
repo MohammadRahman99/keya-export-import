@@ -12,14 +12,14 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
       
       <!-- Classic Keya Group Corporate Top Navigation Bar (White Background) -->
       <header class="bg-white text-slate-900 border-b-2 border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           
           <!-- Official Keya Group Logo & Conglomerate Header -->
           <div class="flex items-center gap-4 cursor-pointer" (click)="scrollToSection('hero')">
             <div class="p-1 rounded border border-slate-200">
               <img src="assets/logo/keya-logo.png" alt="Keya Group Logo" class="h-11 w-auto object-contain">
             </div>
-            <div>
+            <div class="hidden sm:block">
               <div class="flex items-center gap-2">
                 <span class="font-extrabold text-xl text-slate-900 tracking-tight">KEYA GROUP OF INDUSTRIES</span>
                 <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-700 text-white rounded">100% EXPORT COMPLEX</span>
@@ -28,15 +28,28 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
             </div>
           </div>
 
-          <!-- Public Corporate Navigation Links (Clean Dark Text on White Header) -->
-          <div class="flex items-center gap-6 text-xs font-bold">
-            <nav class="hidden md:flex items-center gap-6 text-slate-700">
+          <!-- Public Corporate Navigation & Global Currency Selector Dropdown -->
+          <div class="flex items-center gap-4 text-xs font-bold">
+            <nav class="hidden lg:flex items-center gap-6 text-slate-700">
               <button (click)="scrollToSection('hero')" class="hover:text-emerald-700 transition">Group Overview</button>
               <button (click)="scrollToSection('divisions')" class="hover:text-emerald-700 transition">Industrial Divisions</button>
               <button (click)="scrollToSection('products')" class="hover:text-emerald-700 transition">Export Products</button>
               <button (click)="scrollToSection('trade-hub')" class="hover:text-emerald-700 transition">Sourcing & Tenders</button>
               <button (click)="scrollToSection('calculator')" class="hover:text-emerald-700 transition">Container Calculator</button>
             </nav>
+
+            <!-- GLOBAL CURRENCY SELECTOR DROPDOWN FOR INTERNATIONAL BUYERS & COMPANIES -->
+            <div class="flex items-center gap-2 bg-slate-50 border-2 border-emerald-600 px-3 py-1.5 rounded-xl shadow-sm">
+              <span class="text-slate-600 font-semibold hidden sm:inline">🌐 Currency:</span>
+              <select 
+                [ngModel]="dataService.currentCurrency().code"
+                (ngModelChange)="dataService.setCurrency($event)"
+                class="bg-transparent font-extrabold text-emerald-800 text-xs focus:outline-none cursor-pointer">
+                @for (cur of dataService.currencies(); track cur.code) {
+                  <option [value]="cur.code">{{ cur.flag }} {{ cur.code }} ({{ cur.symbol }})</option>
+                }
+              </select>
+            </div>
           </div>
 
         </div>
@@ -59,11 +72,13 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
                 Serving top global brands across 35+ countries. International buyers can issue Buyer RFQs for custom garments and yarn, while global suppliers bid on raw cotton tenders.
               </p>
 
-              <!-- Conglomerate Standard Statistics -->
+              <!-- Conglomerate Standard Statistics with Dynamic Currency Conversion -->
               <div class="grid grid-cols-3 gap-4 pt-2 text-xs">
                 <div class="p-3 bg-slate-50 rounded border border-slate-200">
                   <div class="text-slate-500 font-semibold">Annual Group Export</div>
-                  <div class="text-lg font-bold text-emerald-700 font-mono">$220,000,000+</div>
+                  <div class="text-lg font-bold text-emerald-700 font-mono">
+                    {{ dataService.formatValue(220000000) }}
+                  </div>
                 </div>
                 <div class="p-3 bg-slate-50 rounded border border-slate-200">
                   <div class="text-slate-500 font-semibold">Monthly Garment Output</div>
@@ -128,7 +143,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
             <p class="text-slate-600">Vertical composite apparel manufacturing T-Shirts, Polo Shirts, Fleece Hoodies, and Sweatpants.</p>
             <div class="pt-2 flex justify-between font-mono text-slate-700 bg-slate-50 p-2.5 rounded">
               <span>Capacity: 4.5M Garments/Mo</span>
-              <span class="font-bold text-emerald-700">Export: $120M/Year</span>
+              <span class="font-bold text-emerald-700">Export: {{ dataService.formatValue(120000000) }}/Year</span>
             </div>
           </div>
 
@@ -143,7 +158,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
             <p class="text-slate-600">Precision ring spun combed and carded cotton yarns (Ne 20/1 to 80/1) tested to Uster Top 5% benchmark.</p>
             <div class="pt-2 flex justify-between font-mono text-slate-700 bg-slate-50 p-2.5 rounded">
               <span>Capacity: 3,800 MT Yarn/Mo</span>
-              <span class="font-bold text-blue-800">Export: $45M/Year</span>
+              <span class="font-bold text-blue-800">Export: {{ dataService.formatValue(45000000) }}/Year</span>
             </div>
           </div>
 
@@ -158,7 +173,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
             <p class="text-slate-600">Global exporter of beauty soaps, glycerine, toothpaste, petroleum jelly, and laundry detergents.</p>
             <div class="pt-2 flex justify-between font-mono text-slate-700 bg-slate-50 p-2.5 rounded">
               <span>Capacity: 12,000 MT Soap/Mo</span>
-              <span class="font-bold text-teal-800">Export: $30M/Year</span>
+              <span class="font-bold text-teal-800">Export: {{ dataService.formatValue(30000000) }}/Year</span>
             </div>
           </div>
 
@@ -173,7 +188,7 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
             <p class="text-slate-600">International raw cotton import procurement hub sourcing Australian Pima and US raw cotton bales.</p>
             <div class="pt-2 flex justify-between font-mono text-slate-700 bg-slate-50 p-2.5 rounded">
               <span>Capacity: 5,000 Bales Cotton/Mo</span>
-              <span class="font-bold text-amber-800">Import: $25M/Year</span>
+              <span class="font-bold text-amber-800">Import: {{ dataService.formatValue(25000000) }}/Year</span>
             </div>
           </div>
 
@@ -208,7 +223,12 @@ import { ExportImportDataService, B2bProduct, BuyLead, SupplierBid } from '../..
                   <p class="text-slate-500 font-medium">Manufacturer: {{ prd.sellerName }}</p>
                 </div>
                 <div class="p-3 bg-slate-50 rounded border border-slate-200 space-y-1 font-mono">
-                  <div class="flex justify-between"><span class="text-slate-500">FOB Price:</span><span class="font-bold text-emerald-700">{{ prd.fobPriceRange }}</span></div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">FOB Price:</span>
+                    <span class="font-bold text-emerald-700">
+                      {{ dataService.formatValue(prd.fobPriceMinUSD) }} - {{ dataService.formatValue(prd.fobPriceMaxUSD) }} / Unit
+                    </span>
+                  </div>
                   <div class="flex justify-between"><span class="text-slate-500">Min Order:</span><span class="font-bold text-slate-900">{{ prd.moq }}</span></div>
                 </div>
                 <button 

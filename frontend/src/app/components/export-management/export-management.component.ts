@@ -16,12 +16,12 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
           <img src="assets/logo/keya-logo.png" alt="Keya Group Logo" class="h-12 w-auto object-contain">
           <div>
             <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Keya Garments & Yarn Outbound Exports</span>
-            <h2 class="text-2xl font-black text-slate-900">Export Sales Orders & Commercial Desk</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Manage global buyer RFQs, communicate directly via Email/WhatsApp, issue sales orders, and clear customs.</p>
+            <h2 class="text-2xl font-black text-slate-900">Export Sales Orders & Buyer RFQs Desk</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Catch incoming buyer RFQs, communicate via Email/WhatsApp, issue sales orders, and clear customs.</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <!-- Investigating Officer & Admin PDF Report Generator -->
           @if (isInvestigatingOfficer() || isAdmin()) {
             <button 
@@ -31,11 +31,18 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
             </button>
           }
 
-          <!-- Admin & Operator Create Export Button -->
+          <!-- Admin & Operator Buttons -->
           @if (!isInvestigatingOfficer()) {
+            <!-- POST BUYER RFQ BUTTON FOR KEYA ADMIN/STAFF -->
+            <button 
+              (click)="openAddRfqModal()"
+              class="px-4 py-3 bg-blue-700 hover:bg-blue-800 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-blue-700/20">
+              <span>📥 + Post Buyer Export RFQ</span>
+            </button>
+
             <button 
               (click)="openAddExportModal()"
-              class="px-5 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/20">
+              class="px-4 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/20">
               <span>+ Create New Export Sales Order</span>
             </button>
           }
@@ -198,6 +205,83 @@ import { ExportImportDataService, ExportOrder, BuyLead } from '../../services/ex
         </div>
       </div>
 
+      <!-- KEYA ADMIN / STAFF POST BUYER RFQ MODAL -->
+      @if (showRfqModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Export Lead Entry</span>
+                <h3 class="text-lg font-black text-slate-900">Post Buyer Export Requirement (RFQ)</h3>
+              </div>
+              <button (click)="showRfqModal.set(false)" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+            </div>
+
+            <p class="text-xs text-slate-600 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+              Record a new international buyer requirement received offline via email, phone, or trade fair.
+            </p>
+
+            <div class="space-y-4 text-xs">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-700 font-bold mb-1">Buyer Company Name *</label>
+                  <input type="text" [(ngModel)]="rfqCompanyName" placeholder="e.g. Target Sourcing Corp" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900">
+                </div>
+                <div>
+                  <label class="block text-slate-700 font-bold mb-1">Contact Person Name *</label>
+                  <input type="text" [(ngModel)]="rfqBuyerName" placeholder="e.g. Mark Vance" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-700 font-bold mb-1">Email Address *</label>
+                  <input type="email" [(ngModel)]="rfqEmail" placeholder="m.vance&#64;target.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-700 font-bold mb-1">WhatsApp / Phone No *</label>
+                  <input type="text" [(ngModel)]="rfqPhone" placeholder="+1 612 555 0192" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-700 font-bold mb-1">Requirement Title *</label>
+                <input type="text" [(ngModel)]="rfqTitle" placeholder="e.g. 20,000 Pcs Heavyweight Fleece Hoodies" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900">
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-slate-700 font-bold mb-1">Quantity</label>
+                  <input type="text" [(ngModel)]="rfqQty" placeholder="20,000 Pcs" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-700 font-bold mb-1">Target FOB ($)</label>
+                  <input type="number" [(ngModel)]="rfqTargetPrice" placeholder="8.50" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-700 font-bold mb-1">Destination</label>
+                  <input type="text" [(ngModel)]="rfqCountry" placeholder="USA" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-700 font-bold mb-1">Specifications</label>
+                <textarea [(ngModel)]="rfqSpecs" rows="3" placeholder="Specify GSM, colorways, labeling..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900"></textarea>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+              <button (click)="showRfqModal.set(false)" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">Cancel</button>
+              <button (click)="saveBuyerRfq()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl text-xs shadow-md">
+                Publish Buyer RFQ
+              </button>
+            </div>
+
+          </div>
+        </div>
+      }
+
       <!-- CREATE / EDIT EXPORT SALES ORDER MODAL -->
       @if (showExportModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
@@ -297,8 +381,20 @@ export class ExportManagementComponent {
 
   exportSearchFilter = '';
   showExportModal = signal(false);
+  showRfqModal = signal(false);
   isEditMode = signal(false);
   editingOrderId = signal<string | null>(null);
+
+  // RFQ Entry Form
+  rfqCompanyName = '';
+  rfqBuyerName = '';
+  rfqEmail = '';
+  rfqPhone = '';
+  rfqTitle = '';
+  rfqQty = '20,000 Pcs';
+  rfqTargetPrice = 8.50;
+  rfqCountry = 'USA';
+  rfqSpecs = '';
 
   // Form Fields
   formCustomerName = '';
@@ -329,6 +425,37 @@ export class ExportManagementComponent {
 
   getBuyerRfqs(): BuyLead[] {
     return this.dataService.buyLeads().filter(l => l.type === 'BUYER_RFQ' || !l.type);
+  }
+
+  openAddRfqModal() {
+    this.rfqCompanyName = '';
+    this.rfqBuyerName = '';
+    this.rfqEmail = '';
+    this.rfqTitle = '';
+    this.showRfqModal.set(true);
+  }
+
+  saveBuyerRfq() {
+    if (!this.rfqTitle || !this.rfqEmail) {
+      alert('Please enter Requirement Title and Contact Email Address!');
+      return;
+    }
+
+    this.dataService.postBuyLead({
+      title: this.rfqTitle,
+      companyName: this.rfqCompanyName || 'International Buyer Corp',
+      buyerName: this.rfqBuyerName || 'Sourcing Manager',
+      buyerEmail: this.rfqEmail,
+      buyerPhone: this.rfqPhone || '+1 555 0192',
+      quantityNeeded: this.rfqQty || '10,000 Pcs',
+      targetUnitPriceUSD: this.rfqTargetPrice || 5.0,
+      destinationCountry: this.rfqCountry || 'USA',
+      specifications: this.rfqSpecs || 'Standard OEM Export Specification',
+      type: 'BUYER_RFQ'
+    });
+
+    alert(`Success! Buyer RFQ "${this.rfqTitle}" published.`);
+    this.showRfqModal.set(false);
   }
 
   filteredExportOrders(): ExportOrder[] {

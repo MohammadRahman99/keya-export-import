@@ -14,9 +14,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configure EF Core DbContext (SQLite Data Source keya_erp.db)
+// Configure EF Core DbContext (Microsoft SQL Server LocalDB: (localdb)\MSSQLLocalDB)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=keya_erp.db"));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "Server=(localdb)\\MSSQLLocalDB;Database=KeyaErpDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+
+    if (connectionString.Contains("(localdb)", StringComparison.OrdinalIgnoreCase) || 
+        connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase) ||
+        connectionString.Contains("Database=", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        options.UseSqlite(connectionString);
+    }
+});
 
 // Register Repositories & Unit of Work for Repository Pattern
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -42,7 +56,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Auto Create Database & Seed Initial Enterprise Data
+// Auto Create Database & Seed Initial Enterprise Data in SQL Server LocalDB on Startup
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
