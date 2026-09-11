@@ -1,0 +1,32 @@
+# Build outputs & temporary binary files
+**/bin/
+**/obj/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.so
+*.dylib
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Angular build & cache
+**/.angular/
+**/dist/
+**/node_modules/
+
+# Visual Studio & IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+Thumbs.db
